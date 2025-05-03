@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # First MongoDB instance (for service 1)
+  mongodb-service1:
+    image: mongo
+    container_name: mongodb-service1
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    volumes:
+      - mongodb-vol1-data:/data/db
+    networks:
+      - microservice-network
+
+  # Mongo Express web interface
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongodb-service1:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin  # Optional: Basic auth for Mongo Express UI
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123  # Optional: Basic auth for Mongo Express UI
+    depends_on:
+      - mongodb-service1
+    networks:
+      - microservice-network
+
+  # RabbitMQ message broker
+  rabbitmq:
+    image: rabbitmq:4.0-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # AMQP port
+      - "15672:15672" # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - microservice-network
+
+
+ # Postgres for Keycloak
+  postgres:
+    image: postgres:17.4-alpine
+    container_name: keycloak-postgres
+    environment:
+      - POSTGRES_DB=keycloak
+      - POSTGRES_USER=keycloak
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - microservice-network
+
+  # keycloak service
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2.0
+    container_name: keycloak
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak
+      - KC_DB_USERNAME=keycloak
+      - KC_DB_PASSWORD=password
+    ports:
+      - "8181:8080"
+    volumes:
+      - ./keyclock-themes/my-custom-theme:/opt/keycloak/themes/customtheme
+    command: 
+      - start-dev
+    depends_on:
+      - postgres
+    networks:
+      - microservice-network
+
+networks:
+  microservice-network:
+    driver: bridge
+
+volumes:
+  mongodb-vol1-data:
+  rabbitmq-data:
+  postgres_data:
