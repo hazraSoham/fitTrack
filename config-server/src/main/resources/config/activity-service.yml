@@ -1,17 +1,17 @@
 spring:
   data:
     mongodb:
-      username: admin
-      password: admin123
-      host: localhost
-      port: 27017
-      database: fitness_activity
+      username: ${ACTIVITY_DB_USERNAME}
+      password: ${ACTIVITY_DB_PASSWORD}
+      host: ${ACTIVITY_DB_HOST:localhost}
+      port: ${ACTIVITY_DB_PORT:27017}
+      database: ${ACTIVITY_DB_NAME:fitness_activity}
       authentication-database: admin
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: admin
-    password: admin123
+    host: ${MQ_HOST:localhost}
+    port: ${MQ_PORT:5672}
+    username: ${MQ_USERNAME}
+    password: ${MQ_PASSWORD}
 
 server:
   port: 8086
